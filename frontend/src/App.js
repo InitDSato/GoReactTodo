@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { DataGrid } from '@mui/x-data-grid';
+import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import { Container, TextField, Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import dayjs from 'dayjs';
 
 const columns = [
+    {
+        field: 'completed',
+        headerName: '完了',
+        type: 'boolean',
+        width: 90,
+        editable: true,
+    },
     { field: 'id', headerName: 'ID', width: 90, editable: false },
     { field: 'title', headerName: 'タイトル', width: 150, editable: true },
     { field: 'description', headerName: '説明', width: 200, editable: true },
@@ -14,28 +21,24 @@ const columns = [
         type: 'date',
         width: 150,
         editable: true,
-        valueGetter: (params) => dayjs(params.value).format('YYYY-MM-DD'),
-    },
-    {
-        field: 'completed',
-        headerName: '完了',
-        type: 'boolean',
-        width: 150,
-        editable: true,
+        valueGetter: (param) => dayjs(param),
+        valueFormatter: (param) => dayjs(param).format('YYYY-MM-DD'),
     },
     {
         field: 'created_at',
         headerName: '作成日時',
         type: 'dateTime',
         width: 200,
-        valueGetter: (params) => dayjs(params.value).format('YYYY-MM-DD HH:mm:ss'),
+        valueGetter: (param) => dayjs(param),
+        valueFormatter: (param) => dayjs(param).format('YYYY-MM-DD HH:mm:ss'),
     },
     {
         field: 'updated_at',
         headerName: '更新日時',
         type: 'dateTime',
         width: 200,
-        valueGetter: (params) => dayjs(params.value).format('YYYY-MM-DD HH:mm:ss'),
+        valueGetter: (param) => dayjs(param),
+        valueFormatter: (param) => dayjs(param).format('YYYY-MM-DD HH:mm:ss'),
     },
 ];
 
@@ -53,25 +56,43 @@ function App() {
 
     const fetchTodos = async () => {
         const response = await axios.get('http://localhost:8080/todos');
-        setTodos(response.data);
+        const sortedData = response.data.sort((a, b) => dayjs(b.updated_at).diff(dayjs(a.updated_at)));
+        console.log(sortedData);
+        setTodos(sortedData);
     };
 
     // 新しいTodoを追加する関数
     const addTodo = async () => {
-        const newTodo = { title: title, description: description, due_date: dueDate, completed: false };
-        await axios.post('http://localhost:8080/todos', newTodo);
-        setTitle('');
-        setDescription('');
-        setDueDate('');
-        fetchTodos();
-        handleClose();
+        const newTodo = { 
+            title: title, 
+            description: description, 
+            due_date: new Date(dueDate), 
+            completed: false 
+        };
+
+        console.log("Sending new Todo:", newTodo);
+
+        try {
+            await axios.post('http://localhost:8080/todos', newTodo);
+            setTitle('');
+            setDescription('');
+            setDueDate('');
+            fetchTodos();
+            handleClose();
+        } catch (error) {
+            console.error("There was an error creating the Todo:", error);
+        }
     };
 
     // セル編集が確定したときに呼ばれる関数
-    const handleCellEditCommit = async (params) => {
-        const updatedTodo = { ...params.row, [params.field]: params.value };
-        await axios.put(`http://localhost:8080/todos/${updatedTodo.id}`, updatedTodo);
-        fetchTodos();
+    const processRowUpdate = async (updatedRow, oldRow) => {
+        try {
+            const response = await axios.put(`http://localhost:8080/todos/${updatedRow.id}`, updatedRow);
+            return response.data;
+        } catch (error) {
+            console.error("There was an error updating the Todo:", error);
+            return oldRow;
+        }
     };
 
     // ダイアログを開く関数
@@ -136,7 +157,8 @@ function App() {
                     rows={todos}
                     columns={columns}
                     pageSize={5}
-                    onCellEditCommit={handleCellEditCommit}
+                    processRowUpdate={processRowUpdate}
+                    components={{ Toolbar: GridToolbar }}
                 />
             </div>
         </Container>
