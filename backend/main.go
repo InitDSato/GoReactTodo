@@ -1,55 +1,73 @@
-// main.go
 package main
 
 import (
-	"encoding/json"
 	"net/http"
-	"sync"
+	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/rs/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
-// Todo構造体の定義
 type Todo struct {
-	ID    int    `json:"id"`
-	Title string `json:"title"`
-	Done  bool   `json:"done"`
+	ID          uint      `json:"id" gorm:"primary_key"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	DueDate     time.Time `json:"due_date"`
+	Completed   bool      `json:"completed"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-var (
-	todos  = []Todo{}
-	nextID = 1
-	mu     sync.Mutex
-)
+var db *gorm.DB
+var err error
 
-// Todoの取得
-func getTodos(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(todos)
+func initDB() {
+	dsn := "host=localhost user=youruser dbname=yourdb sslmode=disable password=yourpassword"
+	db, err = gorm.Open("postgres", dsn)
+	if err != nil {
+		panic("failed to connect to database")
+	}
+
+	db.AutoMigrate(&Todo{})
 }
 
-// Todoの追加
-func addTodo(w http.ResponseWriter, r *http.Request) {
+func getTodos(c *gin.Context) {
+	var todos []Todo
+	db.Find(&todos)
+	c.JSON(http.StatusOK, todos)
+}
+
+func createTodo(c *gin.Context) {
 	var todo Todo
-	json.NewDecoder(r.Body).Decode(&todo)
-
-	mu.Lock()
-	todo.ID = nextID
-	nextID++
-	todos = append(todos, todo)
-	mu.Unlock()
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(todo)
+	if err := c.ShouldBindJSON(&todo); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	todo.CreatedAt = time.Now()
+	todo.UpdatedAt = time.Now()
+	db.Create(&todo)
+	c.JSON(http.StatusOK, todo)
 }
 
-// メイン関数
-func main() {
-	router := mux.NewRouter()
-	router.HandleFunc("/todos", getTodos).Methods("GET")
-	router.HandleFunc("/add", addTodo).Methods("POST")
+func updateTodo(c *gin.Context) {
+	var todo Todo
+	if err := c.ShouldBindJSON(&todo); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	todo.UpdatedAt = time.Now()
+	db.Save(&todo)
+	c.JSON(http.StatusOK, todo)
+}
 
-	handler := cors.AllowAll().Handler(router)
-	http.ListenAndServe(":8080", handler)
+func main() {
+	r := gin.Default()
+	initDB()
+
+	r.GET("/todos", getTodos)
+	r.POST("/todos", createTodo)
+	r.PUT("/todos/:id", updateTodo)
+
+	r.Run(":8080")
 }
