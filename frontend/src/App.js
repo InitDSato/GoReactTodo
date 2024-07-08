@@ -6,11 +6,11 @@ import dayjs from 'dayjs';
 
 const columns = [
     { field: 'id', headerName: 'ID', width: 90, editable: false },
-    { field: 'title', headerName: 'Title', width: 150, editable: true },
-    { field: 'description', headerName: 'Description', width: 200, editable: true },
+    { field: 'title', headerName: 'タイトル', width: 150, editable: true },
+    { field: 'description', headerName: '説明', width: 200, editable: true },
     {
         field: 'due_date',
-        headerName: 'Due Date',
+        headerName: '期限',
         type: 'date',
         width: 150,
         editable: true,
@@ -18,21 +18,21 @@ const columns = [
     },
     {
         field: 'completed',
-        headerName: 'Completed',
+        headerName: '完了',
         type: 'boolean',
         width: 150,
         editable: true,
     },
     {
         field: 'created_at',
-        headerName: 'Created At',
+        headerName: '作成日時',
         type: 'dateTime',
         width: 200,
         valueGetter: (params) => dayjs(params.value).format('YYYY-MM-DD HH:mm:ss'),
     },
     {
         field: 'updated_at',
-        headerName: 'Updated At',
+        headerName: '更新日時',
         type: 'dateTime',
         width: 200,
         valueGetter: (params) => dayjs(params.value).format('YYYY-MM-DD HH:mm:ss'),
@@ -46,6 +46,7 @@ function App() {
     const [dueDate, setDueDate] = useState('');
     const [open, setOpen] = useState(false);
 
+    // Todoリストを取得する関数
     useEffect(() => {
         fetchTodos();
     }, []);
@@ -55,6 +56,7 @@ function App() {
         setTodos(response.data);
     };
 
+    // 新しいTodoを追加する関数
     const addTodo = async () => {
         const newTodo = { title: title, description: description, due_date: dueDate, completed: false };
         await axios.post('http://localhost:8080/todos', newTodo);
@@ -65,33 +67,36 @@ function App() {
         handleClose();
     };
 
+    // セル編集が確定したときに呼ばれる関数
     const handleCellEditCommit = async (params) => {
         const updatedTodo = { ...params.row, [params.field]: params.value };
         await axios.put(`http://localhost:8080/todos/${updatedTodo.id}`, updatedTodo);
         fetchTodos();
     };
 
+    // ダイアログを開く関数
     const handleClickOpen = () => {
         setOpen(true);
     };
 
+    // ダイアログを閉じる関数
     const handleClose = () => {
         setOpen(false);
     };
 
     return (
         <Container>
-            <h1>Todo List</h1>
+            <h1>Todoリスト</h1>
             <Button variant="contained" color="primary" onClick={handleClickOpen}>
-                Add Todo
+                Todoを追加
             </Button>
             <Dialog open={open} onClose={handleClose}>
-                <DialogTitle>Add Todo</DialogTitle>
+                <DialogTitle>Todoを追加</DialogTitle>
                 <DialogContent>
                     <TextField
                         autoFocus
                         margin="dense"
-                        label="Title"
+                        label="タイトル"
                         type="text"
                         fullWidth
                         value={title}
@@ -99,7 +104,7 @@ function App() {
                     />
                     <TextField
                         margin="dense"
-                        label="Description"
+                        label="説明"
                         type="text"
                         fullWidth
                         value={description}
@@ -107,7 +112,7 @@ function App() {
                     />
                     <TextField
                         margin="dense"
-                        label="Due Date"
+                        label="期限"
                         type="date"
                         fullWidth
                         InputLabelProps={{
@@ -119,10 +124,10 @@ function App() {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleClose} color="primary">
-                        Cancel
+                        キャンセル
                     </Button>
                     <Button onClick={addTodo} color="primary">
-                        Add
+                        追加
                     </Button>
                 </DialogActions>
             </Dialog>
