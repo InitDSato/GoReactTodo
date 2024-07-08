@@ -79,7 +79,13 @@ func main() {
 
 	// CORSの設定を追加
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"http://localhost:3000"},
+		AllowOrigins: []string{
+			"http://localhost:3000",
+			"http://3.27.130.166",
+			"https://3.27.130.166",
+			"http://ec2-3-27-130-166.ap-southeast-2.compute.amazonaws.com/",
+			"https://ec2-3-27-130-166.ap-southeast-2.compute.amazonaws.com/",
+		},
 		AllowMethods: []string{"GET", "POST", "PUT", "DELETE"},
 		AllowHeaders: []string{"Origin", "Content-Type"},
 	}))
