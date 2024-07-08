@@ -1,0 +1,43 @@
+# Goのビルドアーティファクト
+bin/
+obj/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Goモジュールキャッシュ
+/pkg/
+/vendor/
+
+# ビルド成果物
+*.log
+*.lock
+*.tmp
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 環境設定ファイル
+.env
+
+# IDEsとエディター
+.vscode/
+.idea/
+*.iml
+
+# OSファイル
+.DS_Store
+Thumbs.db
+
+# テスト結果
+/coverage/
+/test-results/
+junit.xml
+reports/
+
+# Reactビルドアーティファクト
+build/
