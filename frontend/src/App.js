@@ -4,6 +4,9 @@ import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import { Container, TextField, Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import dayjs from 'dayjs';
 
+const current_uri_obj = new URL(window.location.href);
+const backend_uri = `${current_uri_obj.protocol}//${current_uri_obj.hostname}:8080`;
+
 const columns = [
     {
         field: 'completed',
@@ -55,7 +58,7 @@ function App() {
     }, []);
 
     const fetchTodos = async () => {
-        const response = await axios.get('http://localhost:8080/todos');
+        const response = await axios.get(`${backend_uri}/todos`);
         const sortedData = response.data.sort((a, b) => dayjs(b.updated_at).diff(dayjs(a.updated_at)));
         console.log(sortedData);
         setTodos(sortedData);
@@ -73,7 +76,7 @@ function App() {
         console.log("Sending new Todo:", newTodo);
 
         try {
-            await axios.post('http://localhost:8080/todos', newTodo);
+            await axios.post(`${backend_uri}/todos`, newTodo);
             setTitle('');
             setDescription('');
             setDueDate('');
@@ -87,7 +90,7 @@ function App() {
     // セル編集が確定したときに呼ばれる関数
     const processRowUpdate = async (updatedRow, oldRow) => {
         try {
-            const response = await axios.put(`http://localhost:8080/todos/${updatedRow.id}`, updatedRow);
+            const response = await axios.put(`${backend_uri}/todos/${updatedRow.id}`, updatedRow);
             return response.data;
         } catch (error) {
             console.error("There was an error updating the Todo:", error);
